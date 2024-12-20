@@ -5,11 +5,9 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sandra.car_rentals.Model.AuthenticationResponse;
@@ -49,16 +47,38 @@ public class UserController {
     public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
         try {
             String email = request.get("email");
-            // Your reset password logic here
-            return ResponseEntity.ok()
-                .header("Access-Control-Allow-Origin", "http://localhost:3000")
-                .header("Access-Control-Allow-Credentials", "true")
-                .body(Map.of("message", "Reset link sent successfully"));
+            authService.sendPasswordResetEmail(email);
+            return ResponseEntity.ok().body(Map.of("message", "Password reset email sent"));
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                .header("Access-Control-Allow-Origin", "http://localhost:3000")
-                .header("Access-Control-Allow-Credentials", "true")
-                .body(Map.of("error", "Error sending reset link"));
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/verify-token")
+    public ResponseEntity<?> verifyToken(@RequestBody Map<String, String> request) {
+        try {
+            String token = request.get("token");
+            boolean isValid = authService.verifyResetToken(token);
+            if (isValid) {
+                return ResponseEntity.ok().body(Map.of("message", "Token is valid"));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid or expired token"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/update-password")
+    public ResponseEntity<?> updatePassword(@RequestBody Map<String, String> request) {
+        try {
+            String token = request.get("token");
+            String newPassword = request.get("newPassword");
+
+            authService.updatePassword(token, newPassword);
+            return ResponseEntity.ok().body(Map.of("message", "Password updated successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 }

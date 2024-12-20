@@ -1,5 +1,9 @@
 package com.sandra.car_rentals.Services;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -10,10 +14,6 @@ import com.sandra.car_rentals.Model.Token;
 import com.sandra.car_rentals.Model.User;
 import com.sandra.car_rentals.Repository.TokenRepository;
 import com.sandra.car_rentals.Repository.UserRepository;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
 @Service
 public class AuthenticationService {
@@ -76,35 +76,54 @@ public class AuthenticationService {
     }
 
     public void sendPasswordResetEmail(String email) {
-        // Check if the user exists
         Optional<User> userOptional = repository.findByEmail(email);
         if (userOptional.isPresent()) {
             User user = userOptional.get();
-            // Generate a reset token
             String token = UUID.randomUUID().toString();
-    
-            // Save the token in the database
+
             Token resetToken = new Token();
             resetToken.setToken(token);
-            resetToken.setUser (user);
+            resetToken.setUser(user);
             resetToken.setLoggedOut(false);
             tokenRepository.save(resetToken);
-    
-            // Create the reset link
-            String resetLink = "http://localhost:3000/reset-password?token=" + token;
-    
-            // Send the email
+
             emailService.sendSimpleMessage(
-                email, 
-                "Password Reset Request", 
-                "Click the link to reset your password: " + resetLink
+                email,
+                "Password Reset Request",
+                "Use the following token to reset your password:: " + token
             );
         } else {
-            // Handle case where user is not found
-            throw new RuntimeException("User  not found with email: " + email);
+            throw new RuntimeException("User not found with email: " + email);
         }
     }
 
+
+    public boolean verifyResetToken(String token) {
+        Optional<Token> resetTokenOptional = tokenRepository.findByToken(token);
+        return resetTokenOptional.isPresent() && !resetTokenOptional.get().isLoggedOut();
+    }
+
+    public void updatePassword(String token, String newPassword) {
+        Optional<Token> resetTokenOptional = tokenRepository.findByToken(token);
+        if (resetTokenOptional.isPresent()) {
+            Token resetToken = resetTokenOptional.get();
+            User user = resetToken.getUser();
+
+            if (resetToken.isLoggedOut()) {
+                throw new RuntimeException("Token is expired or already used");
+            }
+
+            user.setPassword(passwordEncoder.encode(newPassword));
+            
+            repository.save(user);
+
+            resetToken.setLoggedOut(true);
+            tokenRepository.save(resetToken);
+        } else {
+            throw new RuntimeException("Invalid or expired reset token");
+        }
+    }
+    
     private void revokeAllTokenByUser(User user) {
         List<Token> validTokens = tokenRepository.findAllTokensByUser(user.getId());
         if (validTokens.isEmpty()) {

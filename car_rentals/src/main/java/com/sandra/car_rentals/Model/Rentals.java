@@ -38,6 +38,9 @@ public class Rentals {
     @Column(name = "rental_end_date")
     private LocalDate rentalEndDate;
 
+    @Column(name = "total_price") // Ensure this field exists
+       private double totalPrice;
+
     public Rentals() {
     }
 

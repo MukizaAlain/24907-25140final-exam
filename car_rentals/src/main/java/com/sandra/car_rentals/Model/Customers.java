@@ -11,6 +11,7 @@ import jakarta.persistence.ManyToMany;
 
 import jakarta.persistence.Table;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,11 +36,16 @@ public class Customers {
     @Column(name = "address")
     private String address;
 
+    @Column(name = "created_at") // Add this line
+    private LocalDateTime createdAt; // Add this line
+
     @ManyToMany
     @JoinTable(name = "Customer_Car", joinColumns = @JoinColumn(name = "customer_id"), inverseJoinColumns = @JoinColumn(name = "car_id"))
     private List<Cars> cars;
 
     public Customers() {
+
+        this.createdAt = LocalDateTime.now(); // Initialize createdAt to the current time
     }
 
     public UUID getCustomerId() {

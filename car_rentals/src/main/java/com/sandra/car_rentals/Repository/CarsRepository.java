@@ -5,6 +5,9 @@ import org.springframework.stereotype.Repository;
 import java.util.UUID;
 
 import com.sandra.car_rentals.Model.Cars;
+import com.sandra.car_rentals.Model.Rentals;
+
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -14,5 +17,7 @@ public interface CarsRepository extends JpaRepository<Cars, UUID> {
     Cars findByNameAndModelAndPlateNumber(String name, String model, String plateNumber);
 
     Optional<Cars> findById(UUID id);
+
+    List<Cars> findByNameContainingIgnoreCase(String name);
 
 }
